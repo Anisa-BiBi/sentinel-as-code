@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workspaceName": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2021-06-01",
+      "name": "[parameters('workspaceName')]",
+      "location": "[parameters('location')]",
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.OperationsManagement/solutions",
+      "apiVersion": "2015-11-01-preview",
+      "name": "[concat('SecurityInsights(', parameters('workspaceName'), ')')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]",
+        "containedResources": [],
+        "referencedResources": []
+      },
+      "plan": {
+        "name": "[concat('SecurityInsights(', parameters('workspaceName'), ')')]",
+        "product": "OMSGallery/SecurityInsights",
+        "publisher": "Microsoft"
+      }
+    }
+  ]
+}
