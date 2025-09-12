@@ -1,0 +1,17 @@
+{
+  "kind": "Scheduled",
+  "properties": {
+    "displayName": "Multiple failed logon attempts",
+    "description": "Detects when multiple failed logon attempts are made within 5 minutes.",
+    "enabled": true,
+    "query": "SigninLogs | where ResultType != 0 | summarize Count = count() by UserPrincipalName, bin(TimeGenerated, 5m) | where Count > 5",
+    "queryFrequency": "PT5M",
+    "queryPeriod": "PT5M",
+    "triggerOperator": "GreaterThan",
+    "triggerThreshold": 0,
+    "suppressionDuration": "PT1H",
+    "tactics": [ "CredentialAccess" ],
+    "techniques": [ "T1110" ],
+    "severity": "Medium"
+  }
+}
