@@ -1,0 +1,17 @@
+{
+  "kind": "Scheduled",
+  "properties": {
+    "displayName": "VMs missing Heartbeat (1h)",
+    "description": "Detect VMs that haven't sent a heartbeat in the last hour",
+    "severity": "Medium",
+    "enabled": true,
+    "tactics": ["Persistence"],
+    "query": "Heartbeat | summarize Last = max(TimeGenerated) by Computer | where Last < ago(1h)",
+    "queryFrequency": "PT1H",
+    "queryPeriod": "PT2H",
+    "triggerOperator": "GreaterThan",
+    "triggerThreshold": 0,
+    "suppressionEnabled": false,
+    "suppressionDuration": "PT1H"
+  }
+}
