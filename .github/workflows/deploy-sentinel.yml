@@ -1,0 +1,43 @@
+name: Deploy Microsoft Sentinel content
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy-sentinel:
+    runs-on: ubuntu-latest
+    env:
+      SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+      WORKSPACE: ${{ secrets.SENTINEL_WORKSPACE }}
+      API_VER: "2025-06-01"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Enable (onboard) Microsoft Sentinel for the workspace
+        run: |
+          echo "Onboarding Sentinel (if not already onboarded)..."
+          az rest --method put --uri "https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.OperationalInsights/workspaces/${WORKSPACE}/providers/Microsoft.SecurityInsights/onboardingStates/default?api-version=${API_VER}" --body '{"properties":{}}'
+      
+      - name: Deploy analytics (alert) rules
+        run: |
+          set -e
+          for f in content/analytics/*.json; do
+            [ -f "$f" ] || { echo "no files found in content/analytics"; break; }
+            RULE_ID=$(basename "$f" .json)  # you can choose GUIDs instead
+            echo "Deploying rule $RULE_ID from $f"
+            az rest --method put \
+              --uri "https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.OperationalInsights/workspaces/${WORKSPACE}/providers/Microsoft.SecurityInsights/alertRules/${RULE_ID}?api-version=${API_VER}" \
+              --body @"$f"
+          done
+
+      - name: List deployed alert rules (confirmation)
+        run: |
+          az rest --method get --uri "https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.OperationalInsights/workspaces/${WORKSPACE}/providers/Microsoft.SecurityInsights/alertRules?api-version=${API_VER}" -o json | jq '.value | length as $n | "Deployed rules: \($n)"'
